@@ -9,7 +9,7 @@ def handler(event):
 
     # do the things
 
-    return {"event_data": event}
+    return {"refresh_worker": True, "event_data": event}
 
 
 runpod.serverless.start({"handler": handler})
