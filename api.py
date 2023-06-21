@@ -14,11 +14,10 @@ if __name__ == '__main__':
         endpoint_input={"test_input": "1234"}
     )
 
+    print(run_request)
+
     # Check the status of the endpoint run request
     print(run_request.status())
 
     # Get the output of the endpoint run request, blocking until the endpoint run is complete.
     print(run_request.output())
-
-    # print(run_request)
-
