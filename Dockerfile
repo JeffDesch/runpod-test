@@ -1,9 +1,50 @@
-FROM python:3.11.1-buster
+ARG BASE_IMAGE=nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+FROM ${BASE_IMAGE} as dev-base
 
-WORKDIR /
+WORKDIR /src
 
-RUN pip install runpod
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+ENV SHELL=/bin/bash
+ENV DEBIAN_FRONTEND noninteractive
 
-ADD start.py .
+RUN apt-get update --yes && \
+    apt-get upgrade --yes && \
+    apt install --yes --no-install-recommends\
+    wget\
+    bash\
+    openssh-server &&\
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
 
-CMD [ "python", "-u", "/start.py" ]
+RUN apt-get install software-properties-common -y
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update && apt-get install -y --no-install-recommends
+
+RUN apt-get install python3.11 -y
+RUN apt-get install python3-pip -y
+RUN apt-get install python3.11-dev python3.11-venv python3.11-distutils python3.11-gdbm python3.11-tk python3.11-lib2to3
+
+RUN python3.11 -m venv /venv
+ENV PATH=/venv/bin:$PATH
+
+RUN python3.11 -m pip install --upgrade pip setuptools wheel
+RUN python3.11 -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+RUN python3.11 -m pip install runpod
+RUN python3.11 -m pip install numpy
+RUN python3.11 -m pip install opencv-contrib-python
+RUN python3.11 -m pip install pillow
+RUN python3.11 -m pip install moviepy
+RUN python3.11 -m pip install cupy-cuda12x
+RUN python3.11 -m pip install accelerate
+RUN python3.11 -m pip install python-multipart
+RUN python3.11 -m pip install fortuna
+RUN python3.11 -m pip install transformers
+RUN python3.11 -m pip install diffusers
+
+ADD model_preloader.py /src/
+RUN python3.11 model_preloader.py
+ADD start.py /src/
+
+ENV PYTHONUNBUFFERED=1
+
+CMD [ "python3.11", "-u", "start.py" ]
