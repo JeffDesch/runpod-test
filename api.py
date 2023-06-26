@@ -1,7 +1,9 @@
 import os
+import json
 
 import runpod
 from dotenv import load_dotenv
+from elevenlabs import save
 
 load_dotenv()
 runpod.api_key = os.getenv("RUNPOD_API_KEY")
@@ -10,14 +12,22 @@ runpod.api_key = os.getenv("RUNPOD_API_KEY")
 if __name__ == '__main__':
     endpoint = runpod.Endpoint(os.getenv("ENDPOINT_ID"))
 
-    run_request = endpoint.run(
-        endpoint_input={"test_input": "1234"}
+    run_request = endpoint.run_sync(
+        endpoint_input={"text": """Hello? Testing 1, 2, 3..."""}
     )
 
-    print(run_request)
+    if run_request is not None:
+        with open("log.txt", "w") as file:
+            json.dump(run_request, file)
 
-    # Check the status of the endpoint run request
-    print(run_request.status())
+        output = run_request.get("data", None)
 
-    # Get the output of the endpoint run request, blocking until the endpoint run is complete.
-    print(run_request.output())
+        if output is not None:
+            audio = output
+
+            audio_path = os.path.join(".", "audio")
+            if not os.path.exists(audio_path):
+                os.makedirs(audio_path)
+
+            save(audio, os.path.join(audio_path, "voice.mp3"))
+
