@@ -42,8 +42,16 @@ RUN python3.11 -m pip install fortuna
 RUN python3.11 -m pip install transformers
 RUN python3.11 -m pip install diffusers
 
+# Support files for AutoZoom
+ADD common.cuda /src/
+ADD kernelDiscfillUpdateOutput.cu /src/
+ADD kernelPointrenderUpdateDegrid.cu /src/
+ADD kernelPointrenderUpdateOutput.cu /src/
+ADD kernelPointrenderUpdateZee.cu /src/
+
 ADD model_preloader.py /src/
 RUN python3.11 model_preloader.py
 ADD start.py /src/
+
 
 CMD [ "python3.11", "-u", "start.py" ]
