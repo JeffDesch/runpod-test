@@ -1,7 +1,7 @@
-ARG BASE_IMAGE=nvidia/cuda:12.1.1-cudnn8-runtime-ubuntu22.04
+ARG BASE_IMAGE=nvidia/cuda:12.1.1-devel-ubuntu22.04
 FROM ${BASE_IMAGE} as dev-base
 
-WORKDIR /src
+WORKDIR /
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND noninteractive\
@@ -9,49 +9,26 @@ ENV DEBIAN_FRONTEND noninteractive\
 
 RUN apt-get update --yes && \
     apt-get upgrade --yes && \
-    apt install --yes --no-install-recommends\
-    wget\
-    bash\
-    openssh-server &&\
-    apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+    apt install --yes --no-install-recommends g++ git wget curl bash libgl1 software-properties-common openssh-server && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt install python3.11-dev -y --no-install-recommends && \
+	ln -s /usr/bin/python3.11 /usr/bin/python && \
+	rm /usr/bin/python3 && \
+	ln -s /usr/bin/python3.11 /usr/bin/python3 && \
+	curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+	python get-pip.py &&  \
+    apt-get autoclean
 
-RUN apt-get update && apt-get install -y --no-install-recommends
-RUN apt-get install software-properties-common -y
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN apt-get install python3.11 -y
-RUN apt-get install python3-pip -y
-RUN apt-get install python3.11-distutils -y
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/x86_64-linux-gnu
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
 
-RUN apt-get install python3.11-dev -y
-RUN apt-get install python3.11-venv -y
-RUN python3.11 -m venv /venv
-ENV PATH=/venv/bin:$PATH
-
+COPY requirements.txt requirements.txt
 RUN python3.11 -m pip install --upgrade pip setuptools wheel
-RUN python3.11 -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-RUN python3.11 -m pip install runpod
-RUN python3.11 -m pip install numpy
-RUN python3.11 -m pip install opencv-contrib-python
-RUN python3.11 -m pip install pillow
-RUN python3.11 -m pip install moviepy
-RUN python3.11 -m pip install cupy-cuda12x
-RUN python3.11 -m pip install accelerate
-RUN python3.11 -m pip install python-multipart
-RUN python3.11 -m pip install fortuna
-RUN python3.11 -m pip install transformers
-RUN python3.11 -m pip install diffusers
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Support files for AutoZoom
-ADD common.cuda /src/
-ADD kernelDiscfillUpdateOutput.cu /src/
-ADD kernelPointrenderUpdateDegrid.cu /src/
-ADD kernelPointrenderUpdateOutput.cu /src/
-ADD kernelPointrenderUpdateZee.cu /src/
-
-ADD model_preloader.py /src/
+COPY file_kit.py file_kit.py
+COPY model_preloader.py model_preloader.py
 RUN python3.11 model_preloader.py
-ADD start.py /src/
+COPY worker.py worker.py
 
-
-CMD [ "python3.11", "-u", "start.py" ]
+CMD python3.11 -u worker.py | tee log.txt

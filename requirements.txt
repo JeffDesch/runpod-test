@@ -1,1 +1,13 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+
 runpod
+boto3
+numpy
+diffusers
+torch
+torchvision
+transformers
+accelerate
+pillow
+invisible_watermark
+safetensors
