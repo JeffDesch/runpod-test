@@ -6,9 +6,10 @@ from file_kit import RemoteFileStore
 from diffusers import DiffusionPipeline
 import torch
 
-# load models
+# preload models
 base = DiffusionPipeline.from_pretrained(
     "stabilityai/stable-diffusion-xl-base-1.0",
+    cache_dir="./models",
     local_files_only=True,
     torch_dtype=torch.float16,
     variant="fp16",
@@ -16,6 +17,7 @@ base = DiffusionPipeline.from_pretrained(
 )
 refiner = DiffusionPipeline.from_pretrained(
     "stabilityai/stable-diffusion-xl-refiner-1.0",
+    cache_dir="./models",
     local_files_only=True,
     text_encoder_2=base.text_encoder_2,
     vae=base.vae,
@@ -82,26 +84,15 @@ def handler(payload):
     image.save("image.png")
     end = time.perf_counter()
     print(f"\nJob Completed in: {datetime.timedelta(seconds=end - begin)}")
-    #
-    # s3_client = RemoteFileStore()
-    # job_path = os.path.join("jobs", job_id)
-    # image_path = os.path.join(job_path, "image.png")
-    # s3_client.upload("image.png", image_path)
-    # log_path = os.path.join(job_path, "log.txt")
-    # s3_client.upload("log.txt", log_path)
+
+    s3_client = RemoteFileStore()
+    job_path = os.path.join("jobs", job_id)
+    image_path = os.path.join(job_path, "image.png")
+    s3_client.upload("image.png", image_path)
+    log_path = os.path.join(job_path, "log.txt")
+    s3_client.upload("log.txt", log_path)
 
     return {"refresh_worker": False, "status": "success"}
 
 
-# runpod.serverless.start({"handler": handler})
-
-if __name__ == '__main__':
-    test_input = {"input": {"job_id": "test_job_01",
-                            "prompt": "A black cat sitting in a field of pumpkins",
-                            "neg_prompt": "nsfw, ugly, flat, low resolution, blurry",
-                            "num_steps": 30,
-                            "guidance_scale": 7.5,
-                            "noise_fraction": 0.8,
-                            "offload_cpu": True}}
-
-    handler(test_input)
+runpod.serverless.start({"handler": handler})

@@ -1,0 +1,1 @@
+Copy model checkpoints from ~/.cache/huggingface/hub to this folder to skip re-downloading them during deployment.

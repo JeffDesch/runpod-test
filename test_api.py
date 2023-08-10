@@ -9,7 +9,7 @@ runpod.api_key = os.getenv("RUNPOD_API_KEY")
 
 if __name__ == '__main__':
     job_id = "test_job_01"
-    prompt = "A black cat sitting in a field of pumpkins"
+    prompt = "Realistic fantasy illustration of a black cat sitting in a field of pumpkins"
     neg_prompt = "nsfw, ugly, flat, low resolution, blurry"
     height = 1024
     width = 1024
@@ -41,7 +41,6 @@ if __name__ == '__main__':
             os.makedirs(local_path)
         image_path = os.path.join(local_path, "image.png")
         log_path = os.path.join(local_path, "log.txt")
-        prev_path = os.path.join(local_path, "thumbnail.gif")
 
         remote_path = "/".join(["jobs", job_id, "image.png"])
         s3_client.download_to_dir(remote_path, image_path)
